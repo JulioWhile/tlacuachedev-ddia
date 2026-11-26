@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Día 1/13: Monolito vs Microservicios — @tlacuachedev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Palette 1: Editorial Tech / Paper & Ink (Strict 60-30-10) */
+        --bg: #f4f1ea;
+        --surface: #ffffff;
+        --surface-soft: #faf8f4;
+        --ink: #18181b;
+        --ink-muted: #52525b;
+        --border: #ddd7cc;
+        --border-strong: #c9c1b2;
+        --cobalt: #2563eb;
+        --cobalt-soft: rgba(37, 99, 235, 0.08);
+        --ok: #15803d;
+        --ok-soft: rgba(21, 128, 61, 0.08);
+        --err: #b91c1c;
+        --err-border: #dc2626;
+        --err-soft: rgba(220, 38, 38, 0.07);
+
+        /* Emil Kowalski custom easing */
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+        --font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      body {
+        background-color: var(--bg);
+        background-image: radial-gradient(rgba(24, 24, 27, 0.085) 1px, transparent 1px);
+        background-size: 24px 24px;
+        line-height: 1.55;
+        padding: 36px 20px 64px;
+      }
+
+      .container {
+        max-width: 920px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      /* ===== HEADER ===== */
+      .doc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 22px;
+        border-bottom: 1.5px solid var(--ink);
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .brand-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: block;
+      }
+
+      .kicker-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .pill-dark {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 11px;
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--bg);
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+
+      .pill-dark .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #60a5fa;
+      }
+
+      .pill-outline {
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--cobalt);
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+
+      h1 {
+        font-size: clamp(24px, 3.2vw, 32px);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+      }
+
+      h1 .accent {
+        color: var(--cobalt);
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      /* Tactile Emil Kowalski buttons (specific properties, :active scale 0.97) */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        border-radius: 9px;
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out);
+      }
+
+      .btn:hover {
+        border-color: var(--ink);
+        background: var(--surface-soft);
+      }
+
+      .btn:active {
+        transform: scale(0.97);
+      }
+
+      .btn-primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--bg);
+      }
+
+      .btn-primary:hover {
+        background: var(--cobalt);
+        border-color: var(--cobalt);
+        color: #ffffff;
+      }
+
+      /* ===== CORE CALLOUT ===== */
+      .callout {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3.5px solid var(--cobalt);
+        border-radius: 12px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sec-kicker {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--cobalt);
+        margin-bottom: 8px;
+      }
+
+      .callout p {
+        font-size: 14.5px;
+        color: var(--ink);
+      }
+
+      .callout .rule-line {
+        font-size: 14px;
+        color: var(--ink-muted);
+      }
+
+      .callout .rule-line strong {
+        color: var(--ink);
+      }
+
+      /* ===== GLOSSARY GRID (2 columns, ultra-scannable) ===== */
+      .glossary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 14px;
+      }
+
+      .gloss-item {
+        font-size: 12.5px;
+        line-height: 1.38;
+        color: #3f3f46;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border);
+      }
+
+      .gloss-item strong {
+        color: var(--ink);
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+      }
+
+      /* ===== CARDS & TABLES ===== */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .card-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      h2 {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+      }
+
+      th {
+        text-align: left;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        font-weight: 800;
+        padding: 9px 12px;
+        background: var(--surface-soft);
+        border-bottom: 1.5px solid var(--ink);
+        color: var(--ink);
+      }
+
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #ece7dc;
+        vertical-align: top;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .col-dim {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink-muted);
+        width: 21%;
+      }
+
+      .t-ok {
+        color: var(--ok);
+        font-weight: 700;
+      }
+
+      .t-err {
+        color: var(--err);
+        font-weight: 700;
+      }
+
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        padding: 1px 5px;
+        border-radius: 5px;
+        color: var(--ink);
+      }
+
+      /* ===== DIAGRAM 1: MONOLITH VS MICROSERVICES ===== */
+      .svg-stage {
+        width: 100%;
+        border-radius: 10px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border);
+        padding: 14px;
+      }
+
+      .svg-stage svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* ===== DIAGRAM 2: SEGMENTED TOGGLE (Emil Kowalski) ===== */
+      .segmented {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 10px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        gap: 3px;
+      }
+
+      .seg-btn {
+        border: none;
+        background: transparent;
+        padding: 7px 13px;
+        border-radius: 7px;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--ink-muted);
+        cursor: pointer;
+        transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 140ms var(--ease-out);
+      }
+
+      .seg-btn:active {
+        transform: scale(0.97);
+      }
+
+      .seg-btn[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(24, 24, 27, 0.08);
+      }
+
+      .seg-btn.mode-err[aria-pressed="true"] {
+        color: var(--err);
+      }
+
+      .seg-btn.mode-ok[aria-pressed="true"] {
+        color: var(--ok);
+      }
+
+      .seq-panel {
+        transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+      }
+
+      .seq-panel.hidden {
+        display: none;
+      }
+
+      .print-only-label {
+        display: none;
+      }
+
+      .takeaway-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .mini-note {
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .mini-note.err-note {
+        background: var(--err-soft);
+        border-color: rgba(220, 38, 38, 0.28);
+      }
+
+      .mini-note strong {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        margin-bottom: 4px;
+      }
+
+      /* ===== KLEPPMANN 2 CRITERIA ===== */
+      .code-wrap {
+        position: relative;
+        background: var(--ink);
+        color: #f4f1ea;
+        border-radius: 10px;
+        padding: 16px 18px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.55;
+        overflow-x: auto;
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 7px;
+        border: 1px solid #3f3f46;
+        background: #27272a;
+        color: #f4f1ea;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+      }
+
+      .copy-btn:hover {
+        background: #3f3f46;
+        border-color: #71717a;
+      }
+
+      .copy-btn:active {
+        transform: scale(0.96);
+      }
+
+      .copy-btn.copied {
+        background: var(--ok);
+        border-color: var(--ok);
+        color: #ffffff;
+      }
+
+      .criteria-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .crit-box {
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .crit-tag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--cobalt);
+        margin-bottom: 5px;
+      }
+
+      /* ===== 3 INTERVIEW QUESTIONS ===== */
+      .qa-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .qa-item {
+        padding: 15px 18px;
+        border-radius: 10px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border);
+      }
+
+      .qa-q {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 6px;
+      }
+
+      .qa-q .num {
+        font-family: var(--font-mono);
+        color: var(--cobalt);
+        margin-right: 6px;
+      }
+
+      .qa-a {
+        font-size: 13.5px;
+        color: #3f3f46;
+        line-height: 1.48;
+      }
+
+      .qa-a + .qa-a {
+        margin-top: 5px;
+      }
+
+      /* ===== FOOTER ===== */
+      .doc-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-top: 16px;
+        border-top: 1.5px solid var(--border-strong);
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-muted);
+      }
+
+      .doc-footer strong {
+        color: var(--ink);
+      }
+
+      .doc-footer a {
+        color: var(--cobalt);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .doc-footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* ===== ACCESSIBILITY: REDUCED MOTION ===== */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .doc-header { flex-direction: column; align-items: flex-start; }
+        .takeaway-grid, .criteria-grid, .glossary-grid { grid-template-columns: 1fr; }
+      }
+
+      /* =================================================================
+         @MEDIA PRINT — STRICTLY 2 LETTER PAGES (0 SPILLOVER!)
+         Page 1: Header + Core Callout + Table + Diagram 1
+         Page 2: Diagram 2 (Both States Side-by-Side) + Kleppmann + 3 Q&A + Footer
+         ================================================================= */
+      @media print {
+        @page {
+          size: letter portrait;
+          margin: 0.34in 0.40in;
+        }
+
+        html, body {
+          background: #f4f1ea !important;
+          background-image: none !important;
+          padding: 0 !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+
+        .container {
+          max-width: 100%;
+          gap: 9px;
+        }
+
+        .doc-header {
+          padding-bottom: 8px;
+          gap: 12px;
+        }
+
+        .brand-logo {
+          width: 50px;
+          height: 50px;
+        }
+
+        h1 { font-size: 20px; }
+        h2 { font-size: 14px; }
+        .subtitle { font-size: 9.8px; margin-top: 2px; }
+        .sec-kicker { font-size: 9px; margin-bottom: 4px; }
+
+        .callout {
+          padding: 8px 12px;
+          gap: 3px;
+        }
+        .callout p, .callout .rule-line {
+          font-size: 10.5px;
+          line-height: 1.32;
+        }
+
+        .glossary-grid {
+          gap: 4px 8px;
+        }
+        .gloss-item {
+          padding: 4px 8px;
+          font-size: 9.4px;
+          line-height: 1.26;
+          border-radius: 6px;
+        }
+        .gloss-item strong {
+          font-size: 9.2px;
+        }
+
+        .card {
+          padding: 9px 12px;
+          border-radius: 9px;
+          break-inside: avoid;
+        }
+
+        .card-header-row {
+          margin-bottom: 7px;
+        }
+
+        table { font-size: 10px; }
+        th { padding: 4.5px 7px; font-size: 9.5px; }
+        td { padding: 4.5px 7px; line-height: 1.26; }
+
+        .svg-stage {
+          padding: 6px;
+        }
+
+        /* Clean page break before Section 3 so Page 2 starts fresh and fits 100% */
+        .page-break {
+          break-before: page;
+          page-break-before: always;
+        }
+
+        /* Show BOTH Checkout diagram states cleanly side-by-side in PDF! */
+        .print-dual-seq {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .seq-panel.hidden {
+          display: block !important;
+        }
+
+        .print-only-label {
+          display: block;
+          font-family: var(--font-mono);
+          font-size: 9.5px;
+          font-weight: 800;
+          margin-bottom: 4px;
+        }
+
+        .takeaway-grid {
+          margin-top: 8px;
+          gap: 8px;
+        }
+        .mini-note {
+          padding: 7px 10px;
+          font-size: 10px;
+          line-height: 1.3;
+        }
+        .mini-note strong { font-size: 9.5px; margin-bottom: 2px; }
+
+        .code-wrap {
+          padding: 9px 12px;
+          font-size: 10.5px;
+          line-height: 1.4;
+        }
+
+        .criteria-grid {
+          margin-top: 8px;
+          gap: 8px;
+        }
+        .crit-box {
+          padding: 8px 10px;
+          font-size: 10px;
+          line-height: 1.32;
+        }
+        .crit-tag { font-size: 9.5px; margin-bottom: 2px; }
+
+        .qa-list { gap: 7px; }
+        .qa-item { padding: 8px 11px; }
+        .qa-q { font-size: 11px; margin-bottom: 3px; }
+        .qa-a { font-size: 10px; line-height: 1.32; }
+        .qa-a + .qa-a { margin-top: 3px; }
+
+        .doc-footer {
+          padding-top: 8px;
+          font-size: 9.5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <!-- ==================== HEADER ==================== -->
+      <header class="doc-header">
+        <div class="brand-lockup">
+          <img
+            class="brand-logo"
+            src="assets/logo_tlacuachedev.png"
+            alt="Logo oficial @tlacuachedev"
+          />
+          <div>
+            <div class="kicker-row">
+              <span class="pill-dark"><span class="dot"></span>DÍA 1/13</span>
+              <span class="pill-outline">@tlacuachedev · SYSTEM DESIGN</span>
+            </div>
+            <h1>Cap. 1: <span class="accent">Monolito vs Microservicios</span></h1>
+            <p class="subtitle">
+              Trade-offs de arquitectura · Referencia: Designing Data-Intensive Applications (Martin Kleppmann &amp; Chris Riccomini)
+            </p>
+          </div>
+        </div>
+        <div class="header-actions no-print">
+          <button type="button" class="btn btn-primary" onclick="window.print()">
+            Imprimir / Guardar PDF
+          </button>
+          <a class="btn" href="./README.md">← Índice 13 días</a>
+        </div>
+      </header>
+
+      <!-- ==================== CORE IDEA ==================== -->
+      <section class="callout">
+        <div class="sec-kicker">La idea central en 10 segundos</div>
+        <p>
+          Partir una app de <strong>500 usuarios</strong> en <strong>20 microservicios</strong> no te convierte en Netflix: solo cambia llamadas en memoria de <span class="t-ok">~100 nanosegundos</span> por llamadas de red de <span class="t-err">cientos de milisegundos</span> y te regala <strong>fallos parciales</strong> que en un monolito ni existen.
+        </p>
+        <p class="rule-line">
+          <strong>Regla del Cap. 1:</strong> escala verticalmente primero (mejor máquina, mejor índice, mejor caché). Distribuye solo cuando un nodo ya no aguanta el tráfico o cuando el tamaño del equipo provoca choques constantes al desplegar.
+        </p>
+      </section>
+
+      <!-- ==================== GLOSSARY (8 ESSENTIAL TERMS) ==================== -->
+      <section class="card">
+        <div class="sec-kicker">Glosario rápido · Términos que sí o sí debes conocer antes de empezar</div>
+        <div class="glossary-grid">
+          <div class="gloss-item"><strong>Monolito:</strong> toda tu app (auth, órdenes, pagos) vive y se despliega en un solo proceso/servidor.</div>
+          <div class="gloss-item"><strong>Microservicios:</strong> tu app partida en servicios independientes que se comunican por red (HTTP/gRPC).</div>
+          <div class="gloss-item"><strong>Latencia (ns vs ms):</strong> tiempo de respuesta; <code>1 ms</code> = <code>1,000,000 ns</code> (la red es órdenes de magnitud más lenta que la RAM).</div>
+          <div class="gloss-item"><strong>Transacción ACID / Rollback:</strong> operación todo-o-nada en una DB; si falla un paso, revierte todo sin dejar datos a medias.</div>
+          <div class="gloss-item"><strong>Fail-stop (fallo atómico):</strong> el nodo completo se detiene al fallar; es obvio de detectar y limpio de reiniciar.</div>
+          <div class="gloss-item"><strong>Fallo parcial:</strong> en red distribuida, unos servicios siguen vivos (<code>200 OK</code>) mientras otro muere (<code>504</code>), dejando estado ambiguo.</div>
+          <div class="gloss-item"><strong>Idempotency-Key:</strong> identificador único por operación (UUID) que evita cobrar dos veces si el cliente reintenta un pago.</div>
+          <div class="gloss-item"><strong>Escalado vertical vs horizontal:</strong> vertical = máquina más potente (<code>+CPU/+RAM</code>); horizontal = repartir carga en varios servidores.</div>
+        </div>
+      </section>
+
+      <!-- ==================== SECTION 1: TABLE ==================== -->
+      <section class="card">
+        <div class="sec-kicker">01 · Comparativa real en producción</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Dimensión</th>
+              <th>Monolito (1 nodo en RAM)</th>
+              <th>Microservicios (Red distribuida)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-dim">Comunicación interna</td>
+              <td>Llamada a función en memoria (<span class="t-ok">~100 ns</span>), sin serialización ni saltos de red.</td>
+              <td>Llamada por red HTTP/gRPC (<span class="t-err">10 ms a 200+ ms</span>), congestión y timeouts.</td>
+            </tr>
+            <tr>
+              <td class="col-dim">Tipo de fallo</td>
+              <td><span class="t-ok">Fail-stop atómico:</span> cae toda la app parejo, reinicias y vuelve limpia.</td>
+              <td><span class="t-err">Fallo parcial:</span> una parte responde <code>200 OK</code> y otra muere con <code>504 TIMEOUT</code>.</td>
+            </tr>
+            <tr>
+              <td class="col-dim">Consistencia</td>
+              <td>Transacciones ACID locales en una sola base de datos.</td>
+              <td>Transacciones distribuidas, sagas, retries e <em>idempotency keys</em> obligatorias.</td>
+            </tr>
+            <tr>
+              <td class="col-dim">Complejidad operativa</td>
+              <td>1 deploy, 1 set de logs, debugging local directo.</td>
+              <td>Orquestación (K8s), trazas distribuidas, service discovery y versiones cruzadas.</td>
+            </tr>
+            <tr>
+              <td class="col-dim">Cuándo conviene</td>
+              <td><strong>9 de cada 10 productos al inicio</strong>, equipos pequeños/medianos, tráfico que cabe en 1 servidor moderno.</td>
+              <td>Tráfico que rebasa el límite físico de 1 nodo o <strong>20+ programadores</strong> pisándose en cada deploy.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ==================== SECTION 2: DIAGRAM 1 ==================== -->
+      <section class="card">
+        <div class="sec-kicker">02 · Modelo mental: RAM local vs Red distribuida</div>
+        <div class="svg-stage">
+          <svg viewBox="0 0 860 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama comparativo de Monolito en RAM vs Microservicios en Red">
+            <!-- Left: Monolith -->
+            <rect x="8" y="8" width="404" height="222" rx="12" fill="#ffffff" stroke="#18181b" stroke-width="1.8" />
+            <rect x="22" y="22" width="174" height="24" rx="6" fill="#18181b" />
+            <text x="109" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#f4f1ea">MONOLITO · 1 NODO</text>
+            <rect x="278" y="22" width="120" height="24" rx="6" fill="rgba(21,128,61,0.10)" stroke="#15803d" stroke-width="1" />
+            <text x="338" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#15803d">~100 ns · RAM</text>
+
+            <rect x="24" y="66" width="106" height="62" rx="8" fill="#f4f1ea" stroke="#ddd7cc" stroke-width="1.5" />
+            <text x="77" y="93" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="800" fill="#18181b">Auth()</text>
+            <text x="77" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#2563eb">in-memory</text>
+
+            <line x1="130" y1="97" x2="154" y2="97" stroke="#2563eb" stroke-width="2.2" />
+            <polygon points="154,92 163,97 154,102" fill="#2563eb" />
+
+            <rect x="164" y="66" width="106" height="62" rx="8" fill="#f4f1ea" stroke="#ddd7cc" stroke-width="1.5" />
+            <text x="217" y="93" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="800" fill="#18181b">Orders()</text>
+            <text x="217" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#2563eb">in-memory</text>
+
+            <line x1="270" y1="97" x2="294" y2="97" stroke="#2563eb" stroke-width="2.2" />
+            <polygon points="294,92 303,97 294,102" fill="#2563eb" />
+
+            <rect x="304" y="66" width="94" height="62" rx="8" fill="#f4f1ea" stroke="#15803d" stroke-width="1.5" />
+            <text x="351" y="93" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="800" fill="#18181b">DB ACID</text>
+            <text x="351" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#15803d">ROLLBACK</text>
+
+            <rect x="24" y="148" width="374" height="64" rx="8" fill="#faf8f4" stroke="#ddd7cc" stroke-width="1" />
+            <text x="38" y="172" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#15803d">● FAIL-STOP ATÓMICO</text>
+            <text x="38" y="194" font-family="Space Grotesk, sans-serif" font-size="12" fill="#52525b">Si falla, cae todo junto. 1 transacción, 0 estados a medias.</text>
+
+            <!-- Right: Microservices -->
+            <rect x="448" y="8" width="404" height="222" rx="12" fill="#ffffff" stroke="#dc2626" stroke-width="1.8" />
+            <rect x="462" y="22" width="194" height="24" rx="6" fill="#dc2626" />
+            <text x="559" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#ffffff">MICROSERVICIOS · RED</text>
+            <rect x="706" y="22" width="132" height="24" rx="6" fill="rgba(220,38,38,0.08)" stroke="#dc2626" stroke-width="1" />
+            <text x="772" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#b91c1c">10–200+ ms</text>
+
+            <rect x="464" y="66" width="106" height="62" rx="8" fill="#f4f1ea" stroke="#15803d" stroke-width="1.5" />
+            <text x="517" y="91" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="800" fill="#18181b">API</text>
+            <text x="517" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#15803d">● 200 OK</text>
+
+            <line x1="570" y1="97" x2="594" y2="97" stroke="#52525b" stroke-width="2" stroke-dasharray="5 4" />
+            <polygon points="594,92 603,97 594,102" fill="#52525b" />
+
+            <rect x="604" y="66" width="106" height="62" rx="8" fill="#f4f1ea" stroke="#15803d" stroke-width="1.5" />
+            <text x="657" y="91" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="800" fill="#18181b">ORDERS</text>
+            <text x="657" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#15803d">✓ CREADA</text>
+
+            <line x1="710" y1="97" x2="734" y2="97" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="5 4" />
+            <polygon points="734,92 743,97 734,102" fill="#dc2626" />
+
+            <rect x="744" y="66" width="94" height="62" rx="8" fill="rgba(220,38,38,0.08)" stroke="#dc2626" stroke-width="1.8" />
+            <text x="791" y="91" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#18181b">PAYMENTS</text>
+            <text x="791" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="800" fill="#b91c1c">✕ 504 DEAD</text>
+
+            <rect x="464" y="148" width="374" height="64" rx="8" fill="rgba(220,38,38,0.06)" stroke="rgba(220,38,38,0.3)" stroke-width="1" />
+            <text x="478" y="172" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#b91c1c">✕ FALLO PARCIAL</text>
+            <text x="478" y="194" font-family="Space Grotesk, sans-serif" font-size="11.2" fill="#3f3f46">Media app viva y otra muerta. Exige retries e idempotencia.</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- ==================== SECTION 3: DIAGRAM 2 (INTERACTIVE CHECKOUT) ==================== -->
+      <section class="card page-break">
+        <div class="card-header-row">
+          <div>
+            <div class="sec-kicker" style="margin-bottom: 3px;">03 · Caso real de producción: Checkout ($499 MXN)</div>
+            <h2>Diagrama de secuencia: Fallo parcial y Idempotency-Key</h2>
+          </div>
+          <!-- Emil Kowalski tactile segmented toggle -->
+          <div class="segmented no-print" role="group" aria-label="Modo del diagrama de secuencia">
+            <button type="button" class="seg-btn mode-err" id="btn-mode-err" aria-pressed="true">
+              Sin Idempotency-Key (Doble cobro)
+            </button>
+            <button type="button" class="seg-btn mode-ok" id="btn-mode-ok" aria-pressed="false">
+              Con Idempotency-Key (Seguro)
+            </button>
+          </div>
+        </div>
+
+        <div class="print-dual-seq">
+          <!-- MODE A: WITHOUT IDEMPOTENCY KEY -->
+          <div class="seq-panel" id="panel-err">
+            <div class="print-only-label" style="color: #b91c1c;">A) SIN IDEMPOTENCY-KEY (RIESGO DE DOBLE COBRO)</div>
+            <div class="svg-stage">
+              <svg viewBox="0 0 820 278" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Secuencia Checkout sin Idempotency-Key">
+                <!-- Lifelines -->
+                <line x1="95" y1="48" x2="95" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="305" y1="48" x2="305" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="515" y1="48" x2="515" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="725" y1="48" x2="725" y2="264" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                <!-- Actors -->
+                <rect x="20" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#18181b" stroke-width="1.5" />
+                <text x="95" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#18181b">App ($499 MXN)</text>
+
+                <rect x="230" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#18181b" stroke-width="1.5" />
+                <text x="305" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#18181b">API Gateway</text>
+
+                <rect x="440" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#15803d" stroke-width="1.5" />
+                <text x="515" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#15803d">Orders Service</text>
+
+                <rect x="650" y="10" width="150" height="36" rx="7" fill="rgba(220,38,38,0.08)" stroke="#dc2626" stroke-width="1.5" />
+                <text x="725" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#b91c1c">Payments Service</text>
+
+                <!-- Step 1 -->
+                <line x1="95" y1="74" x2="296" y2="74" stroke="#2563eb" stroke-width="2" />
+                <polygon points="296,69 305,74 296,79" fill="#2563eb" />
+                <text x="200" y="67" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#2563eb">1. POST /checkout</text>
+
+                <!-- Step 2 -->
+                <line x1="305" y1="104" x2="506" y2="104" stroke="#15803d" stroke-width="2" />
+                <polygon points="506,99 515,104 506,109" fill="#15803d" />
+                <text x="410" y="97" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#15803d">2. Crear orden #4821 → 200 OK</text>
+
+                <!-- Step 3 -->
+                <line x1="305" y1="142" x2="716" y2="142" stroke="#18181b" stroke-width="2" />
+                <polygon points="716,137 725,142 716,147" fill="#18181b" />
+                <text x="515" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#18181b">3. Cobrar $499 MXN (red lenta 200+ ms)</text>
+
+                <!-- Step 4: 504 Timeout -->
+                <line x1="725" y1="178" x2="314" y2="178" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="6 4" />
+                <polygon points="314,173 305,178 314,183" fill="#dc2626" />
+                <text x="515" y="171" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#b91c1c">4. ✕ 504 TIMEOUT (¿pasó el cargo o no?)</text>
+
+                <!-- Step 5: Retries -->
+                <line x1="95" y1="214" x2="716" y2="214" stroke="#dc2626" stroke-width="2.2" />
+                <polygon points="716,209 725,214 716,219" fill="#dc2626" />
+                <text x="410" y="207" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#b91c1c">5. RETRY #1 / #2 / #3 (sin llave única)</text>
+
+                <!-- Result Banner -->
+                <rect x="170" y="232" width="480" height="32" rx="7" fill="rgba(220,38,38,0.12)" stroke="#dc2626" stroke-width="1.5" />
+                <text x="410" y="252" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#b91c1c">⚠ RESULTADO: RIESGO DE COBRO DUPLICADO ($998 MXN)</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- MODE B: WITH IDEMPOTENCY KEY -->
+          <div class="seq-panel hidden" id="panel-ok">
+            <div class="print-only-label" style="color: #15803d;">B) CON IDEMPOTENCY-KEY (RESPUESTA SEGURA)</div>
+            <div class="svg-stage">
+              <svg viewBox="0 0 820 278" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Secuencia Checkout con Idempotency-Key">
+                <line x1="95" y1="48" x2="95" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="305" y1="48" x2="305" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="515" y1="48" x2="515" y2="264" stroke="#c9c1b2" stroke-width="1.5" stroke-dasharray="4 4" />
+                <line x1="725" y1="48" x2="725" y2="264" stroke="#15803d" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                <rect x="20" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#18181b" stroke-width="1.5" />
+                <text x="95" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#18181b">App ($499 MXN)</text>
+
+                <rect x="230" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#18181b" stroke-width="1.5" />
+                <text x="305" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#18181b">API Gateway</text>
+
+                <rect x="440" y="10" width="150" height="36" rx="7" fill="#ffffff" stroke="#15803d" stroke-width="1.5" />
+                <text x="515" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#15803d">Orders Service</text>
+
+                <rect x="650" y="10" width="150" height="36" rx="7" fill="rgba(21,128,61,0.10)" stroke="#15803d" stroke-width="1.5" />
+                <text x="725" y="32" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#15803d">Payments + Key DB</text>
+
+                <line x1="95" y1="74" x2="296" y2="74" stroke="#2563eb" stroke-width="2" />
+                <polygon points="296,69 305,74 296,79" fill="#2563eb" />
+                <text x="200" y="67" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#2563eb">1. POST (Key: uuid-9f2a)</text>
+
+                <line x1="305" y1="104" x2="506" y2="104" stroke="#15803d" stroke-width="2" />
+                <polygon points="506,99 515,104 506,109" fill="#15803d" />
+                <text x="410" y="97" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#15803d">2. Crear orden #4821 → 200 OK</text>
+
+                <line x1="305" y1="142" x2="716" y2="142" stroke="#18181b" stroke-width="2" />
+                <polygon points="716,137 725,142 716,147" fill="#18181b" />
+                <text x="515" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#18181b">3. Cobra 1 vez + guarda Key uuid-9f2a (respuesta se pierde)</text>
+
+                <line x1="95" y1="178" x2="716" y2="178" stroke="#2563eb" stroke-width="2.2" />
+                <polygon points="716,173 725,178 716,183" fill="#2563eb" />
+                <text x="410" y="171" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#2563eb">4. RETRY #1 enviando la misma Key: uuid-9f2a</text>
+
+                <line x1="725" y1="214" x2="104" y2="214" stroke="#15803d" stroke-width="2.2" />
+                <polygon points="104,209 95,214 104,219" fill="#15803d" />
+                <text x="410" y="207" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="800" fill="#15803d">5. ✓ Key detectada → devuelve resultado guardado (200 OK)</text>
+
+                <rect x="170" y="232" width="480" height="32" rx="7" fill="rgba(21,128,61,0.12)" stroke="#15803d" stroke-width="1.5" />
+                <text x="410" y="252" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="800" fill="#15803d">✓ RESULTADO: 1 SOLO COBRO ($499 MXN) · CERO DUPLICADOS</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-grid">
+          <div class="mini-note">
+            <strong class="t-ok">En un monolito:</strong>
+            La orden y el registro de pago corren en el mismo proceso y la misma base de datos; si algo truena, la transacción hace <code>ROLLBACK</code> completo.
+          </div>
+          <div class="mini-note err-note">
+            <strong class="t-err">En microservicios:</strong>
+            <code>Orders</code> ya dijo que sí, <code>Payments</code> no contestó a tiempo y tu app no sabe si el cargo pasó o se perdió en la red.
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SECTION 4: KLEPPMANN 2 CRITERIA ==================== -->
+      <section class="card">
+        <div class="sec-kicker">04 · Los 2 criterios de Kleppmann para distribuir</div>
+        <div class="code-wrap">
+          <button type="button" class="copy-btn no-print" id="copy-rule-btn">Copiar código</button>
+<pre id="rule-code"><span style="color:#60a5fa;">if</span> (traffic &gt; <span style="color:#fbbf24;">1_node</span> || devs &gt;= <span style="color:#fbbf24;">20</span>) {
+  <span style="color:#4ade80;">distribute</span>(); <span style="color:#94a3b8;">// Justificado: escala técnica u organizacional</span>
+} <span style="color:#60a5fa;">else</span> {
+  <span style="color:#38bdf8;">scaleVerticalFirst</span>(); <span style="color:#94a3b8;">// 1 servidor moderno (64 vCPU, 256 GB RAM) aguanta 10k+ req/s</span>
+}</pre>
+        </div>
+        <div class="criteria-grid">
+          <div class="crit-box">
+            <div class="crit-tag">CRITERIO 01 · ESCALA TÉCNICA (TRÁFICO / DATOS)</div>
+            Ya optimizaste consultas, índices y hardware vertical, y tu carga real rebasa lo que una sola máquina puede manejar (o necesitas alta disponibilidad multirregión estricta).
+          </div>
+          <div class="crit-box">
+            <div class="crit-tag">CRITERIO 02 · ESCALA ORGANIZACIONAL (EQUIPO)</div>
+            Tienes suficientes programadores (referencia práctica: <strong>~20+ devs</strong>) trabajando en el mismo repositorio y pisándose cada vez que despliegan a producción.
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SECTION 5: 3 INTERVIEW QUESTIONS ==================== -->
+      <section class="card">
+        <div class="sec-kicker">05 · Tres preguntas reales de entrevista (System Design)</div>
+        <div class="qa-list">
+          <article class="qa-item">
+            <h3 class="qa-q"><span class="num">01.</span> ¿Por qué los reintentos causan cobros duplicados y cómo se evita?</h3>
+            <p class="qa-a">Cuando un cliente recibe <code>504 TIMEOUT</code>, no sabe si el servidor de pagos nunca recibió la petición o si sí la procesó y se perdió la respuesta. Si reintenta sin control, el cargo puede aplicarse dos veces.</p>
+            <p class="qa-a"><strong>Respuesta clave:</strong> usar <code>idempotency keys</code> (un UUID generado por el cliente antes del primer intento). El servidor guarda la llave junto al resultado del pago; si llega un retry con la misma llave, devuelve el resultado original sin volver a cobrar.</p>
+          </article>
+
+          <article class="qa-item">
+            <h3 class="qa-q"><span class="num">02.</span> ¿Cuándo conviene escalar verticalmente vs horizontalmente?</h3>
+            <p class="qa-a"><strong>Escala vertical (máquina más grande):</strong> más barata en horas de ingeniería, mantiene transacciones ACID simples y evita latencia de red. Un servidor moderno con NVMe, 64 vCPU y 256 GB de RAM aguanta miles de peticiones por segundo.</p>
+            <p class="qa-a"><strong>Escala horizontal (más nodos):</strong> obligatoria cuando alcanzas el techo físico de hardware, necesitas tolerancia a caída total de un datacenter o requieres aislar despliegues entre múltiples equipos independientes.</p>
+          </article>
+
+          <article class="qa-item">
+            <h3 class="qa-q"><span class="num">03.</span> ¿Qué es un «monolito distribuido» y por qué es el peor escenario?</h3>
+            <p class="qa-a">Ocurre cuando separas el código en varios microservicios, pero todos siguen leyendo y escribiendo sobre la <strong>misma base de datos</strong> o requieren desplegarse sincronizados para no romperse.</p>
+            <p class="qa-a"><strong>Por qué duele:</strong> te quedas con toda la latencia, timeouts y fallos parciales de un sistema distribuido, pero sin independencia real de despliegue ni aislamiento de fallas.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ==================== FOOTER ==================== -->
+      <footer class="doc-footer">
+        <span>
+          <strong>@tlacuachedev</strong> · Serie completa (13 capítulos) · Resumen didáctico original
+        </span>
+        <span>
+          Próximo capítulo (Día 2/13): <strong>Promedio vs p99 (Tail Latency)</strong> ·
+          <a href="https://instagram.com/tlacuachedev" target="_blank" rel="noopener">Instagram</a>
+        </span>
+      </footer>
+    </main>
+
+    <script>
+      // 1. Segmented toggle for Checkout sequence diagram
+      const btnErr = document.getElementById("btn-mode-err");
+      const btnOk = document.getElementById("btn-mode-ok");
+      const panelErr = document.getElementById("panel-err");
+      const panelOk = document.getElementById("panel-ok");
+
+      function setMode(mode) {
+        const isErr = mode === "err";
+        btnErr.setAttribute("aria-pressed", String(isErr));
+        btnOk.setAttribute("aria-pressed", String(!isErr));
+        panelErr.classList.toggle("hidden", !isErr);
+        panelOk.classList.toggle("hidden", isErr);
+      }
+
+      btnErr.addEventListener("click", () => setMode("err"));
+      btnOk.addEventListener("click", () => setMode("ok"));
+
+      // 2. Copy Kleppmann rule code snippet
+      const copyBtn = document.getElementById("copy-rule-btn");
+      const ruleCode = document.getElementById("rule-code");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(ruleCode.innerText);
+          copyBtn.textContent = "Copiado ✓";
+          copyBtn.classList.add("copied");
+          setTimeout(() => {
+            copyBtn.textContent = "Copiar código";
+            copyBtn.classList.remove("copied");
+          }, 1800);
+        } catch {
+          copyBtn.textContent = "Selecciona y copia";
+        }
+      });
+    </script>
+  </body>
+</html>
