@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Día 2/13: Promedio vs p99 (Tail Latency) — @tlacuachedev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --surface: #ffffff;
+        --surface-soft: #faf8f4;
+        --ink: #18181b;
+        --ink-muted: #52525b;
+        --border: #ddd7cc;
+        --border-strong: #c9c1b2;
+        --cobalt: #2563eb;
+        --cobalt-soft: rgba(37, 99, 235, 0.08);
+        --ok: #15803d;
+        --ok-soft: rgba(21, 128, 61, 0.08);
+        --err: #b91c1c;
+        --err-border: #dc2626;
+        --err-soft: rgba(220, 38, 38, 0.07);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        --font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      body {
+        background-color: var(--bg);
+        background-image: radial-gradient(rgba(24, 24, 27, 0.085) 1px, transparent 1px);
+        background-size: 24px 24px;
+        line-height: 1.55;
+        padding: 36px 20px 64px;
+      }
+
+      .container {
+        max-width: 920px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      /* HEADER */
+      .doc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1.5px solid var(--ink);
+      }
+      .brand-lockup { display: flex; align-items: center; gap: 18px; }
+      .brand-logo { width: 70px; height: 70px; border-radius: 50%; flex-shrink: 0; display: block; }
+      .kicker-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+      .pill-dark {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 3px 11px; border-radius: 999px; background: var(--ink); color: var(--bg);
+        font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em;
+      }
+      .pill-dark .dot { width: 7px; height: 7px; border-radius: 50%; background: #60a5fa; }
+      .pill-outline {
+        padding: 3px 10px; border-radius: 999px; background: var(--surface);
+        border: 1px solid var(--border); color: var(--cobalt);
+        font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+      }
+      h1 { font-size: clamp(24px, 3.2vw, 32px); font-weight: 700; line-height: 1.1; letter-spacing: -0.025em; }
+      h1 .accent { color: var(--cobalt); }
+      .subtitle { font-size: 13.5px; color: var(--ink-muted); margin-top: 5px; }
+
+      .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 15px; border-radius: 10px;
+        border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
+        font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+        text-decoration: none; cursor: pointer;
+        transition: transform 140ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+      }
+      .btn:hover { background: var(--surface-soft); border-color: var(--ink); }
+      .btn:active { transform: scale(0.97); }
+      .btn-primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+      .btn-primary:hover { background: var(--cobalt); border-color: var(--cobalt); color: #ffffff; }
+
+      /* CALLOUT */
+      .callout {
+        background: var(--surface); border: 1px solid var(--border);
+        border-left: 3.5px solid var(--cobalt); border-radius: 12px;
+        padding: 16px 20px; display: flex; flex-direction: column; gap: 7px;
+      }
+      .sec-kicker {
+        font-family: var(--font-mono); font-size: 11px; font-weight: 800;
+        letter-spacing: 0.05em; text-transform: uppercase; color: var(--cobalt); margin-bottom: 6px;
+      }
+      .callout p { font-size: 14.5px; color: var(--ink); }
+      .callout .rule-line { font-size: 13.5px; color: var(--ink-muted); }
+      .callout .rule-line strong { color: var(--ink); }
+
+      /* GLOSSARY GRID */
+      .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+      .gloss-item {
+        font-size: 12.5px; line-height: 1.38; color: #3f3f46;
+        padding: 7px 10px; border-radius: 8px;
+        background: var(--surface-soft); border: 1px solid var(--border);
+      }
+      .gloss-item strong { color: var(--ink); font-family: var(--font-mono); font-size: 11.5px; }
+
+      /* CARDS & TABLE */
+      .card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 18px 20px;
+      }
+      .card-header-row {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 12px; margin-bottom: 12px;
+      }
+      h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.015em; color: var(--ink); }
+
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th {
+        text-align: left; font-family: var(--font-mono); font-size: 11.5px; font-weight: 800;
+        padding: 8px 10px; background: var(--surface-soft); border-bottom: 1.5px solid var(--ink);
+      }
+      td { padding: 9px 10px; border-bottom: 1px solid #ece7dc; vertical-align: top; }
+      tr:last-child td { border-bottom: none; }
+      .tag-ok { color: var(--ok); font-weight: 700; font-family: var(--font-mono); font-size: 12px; }
+      .tag-err { color: var(--err); font-weight: 700; font-family: var(--font-mono); font-size: 12px; }
+
+      /* EMIL KOWALSKI SEGMENTED TOGGLE */
+      .seg-toggle {
+        display: inline-flex; padding: 3px; border-radius: 10px;
+        background: var(--bg); border: 1px solid var(--border); gap: 4px;
+      }
+      .seg-btn {
+        border: none; background: transparent; color: var(--ink-muted);
+        font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+        padding: 6px 12px; border-radius: 7px; cursor: pointer;
+        transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 140ms var(--ease-out);
+      }
+      .seg-btn:active { transform: scale(0.97); }
+      .seg-btn.active-err { background: var(--err-border); color: #ffffff; }
+      .seg-btn.active-ok { background: var(--cobalt); color: #ffffff; }
+
+      .svg-stage {
+        background: var(--surface-soft); border: 1px solid var(--border);
+        border-radius: 10px; padding: 12px; overflow: hidden;
+      }
+      .svg-stage svg { width: 100%; height: auto; display: block; }
+
+      .diag-panel { display: none; }
+      .diag-panel.visible { display: block; }
+
+      .takeaway-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+      .mini-note {
+        padding: 11px 14px; border-radius: 10px;
+        background: var(--surface-soft); border: 1px solid var(--border);
+        font-size: 12.5px; line-height: 1.42;
+      }
+      .mini-note.err-note { background: var(--err-soft); border-color: rgba(220,38,38,0.28); }
+      .mini-note strong { display: block; font-family: var(--font-mono); font-size: 11.5px; margin-bottom: 3px; }
+      .mini-note b { font-family: var(--font-mono); color: var(--ink); }
+
+      /* CODE BLOCK */
+      .code-wrap {
+        position: relative; background: var(--ink); color: #f4f1ea;
+        border-radius: 10px; padding: 14px 16px;
+        font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5;
+      }
+      .copy-btn {
+        position: absolute; top: 9px; right: 9px;
+        padding: 4px 10px; border-radius: 7px;
+        border: 1px solid #3f3f46; background: #27272a; color: #f4f1ea;
+        font-family: var(--font-mono); font-size: 11px; font-weight: 700; cursor: pointer;
+      }
+      .copy-btn.copied { background: var(--ok); border-color: var(--ok); }
+
+      /* Q&A */
+      .qa-list { display: flex; flex-direction: column; gap: 10px; }
+      .qa-item {
+        padding: 12px 15px; border-radius: 10px;
+        background: var(--surface-soft); border: 1px solid var(--border);
+      }
+      .qa-q { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+      .qa-q .num { font-family: var(--font-mono); color: var(--cobalt); margin-right: 6px; }
+      .qa-a { font-size: 13px; color: #3f3f46; line-height: 1.45; }
+
+      .doc-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 10px; padding-top: 12px;
+        border-top: 1px solid var(--border-strong);
+        font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-muted);
+      }
+      .doc-footer a { color: var(--cobalt); text-decoration: none; font-weight: 700; }
+
+      @media (max-width: 720px) {
+        .doc-header { flex-direction: column; align-items: flex-start; }
+        .takeaway-grid, .glossary-grid { grid-template-columns: 1fr; }
+      }
+
+      /* =================================================================
+         @MEDIA PRINT — STRICTLY 2 LETTER PAGES (0 SPILLOVER!)
+         Page 1: Header + Callout + Glossary (8 terms) + Table + Diagram 1
+         Page 2: Diagram 2 (Cascada 5 servicios) + Alert Rule + 3 Q&A + Footer
+         ================================================================= */
+      @media print {
+        @page { size: letter portrait; margin: 0.34in 0.40in; }
+        html, body {
+          background: #f4f1ea !important; background-image: none !important;
+          padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .no-print { display: none !important; }
+        .container { max-width: 100%; gap: 8px; }
+        .doc-header { padding-bottom: 7px; gap: 10px; }
+        .brand-logo { width: 48px; height: 48px; }
+        h1 { font-size: 19.5px; }
+        h2 { font-size: 13.5px; }
+        .subtitle { font-size: 9.5px; margin-top: 2px; }
+        .sec-kicker { font-size: 8.8px; margin-bottom: 3px; }
+        .callout { padding: 7px 11px; gap: 3px; }
+        .callout p, .callout .rule-line { font-size: 10.2px; line-height: 1.3; }
+        .glossary-grid { gap: 4px 8px; }
+        .gloss-item { padding: 4px 7px; font-size: 9.2px; line-height: 1.24; border-radius: 6px; }
+        .gloss-item strong { font-size: 9px; }
+        .card { padding: 8px 11px; border-radius: 8px; break-inside: avoid; }
+        .card-header-row { margin-bottom: 6px; }
+        table { font-size: 9.8px; }
+        th { padding: 4px 7px; font-size: 9.2px; }
+        td { padding: 4px 7px; line-height: 1.24; }
+        .svg-stage { padding: 6px; }
+        .page-break-before { break-before: page; page-break-before: always; }
+        .print-both .diag-panel { display: block !important; margin-bottom: 6px; }
+        .takeaway-grid { gap: 8px; margin-top: 7px; }
+        .mini-note { padding: 6px 9px; font-size: 9.4px; line-height: 1.26; }
+        .code-wrap { padding: 8px 11px; font-size: 9.8px; line-height: 1.35; }
+        .qa-list { gap: 6px; }
+        .qa-item { padding: 7px 10px; }
+        .qa-q { font-size: 10.8px; margin-bottom: 2px; }
+        .qa-a { font-size: 9.8px; line-height: 1.3; }
+        .doc-footer { padding-top: 6px; font-size: 9.2px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <!-- HEADER -->
+      <header class="doc-header">
+        <div class="brand-lockup">
+          <img class="brand-logo" src="./assets/logo_tlacuachedev.png" alt="Logo @tlacuachedev" />
+          <div>
+            <div class="kicker-row">
+              <span class="pill-dark"><span class="dot"></span>DÍA 2/13</span>
+              <span class="pill-outline">@tlacuachedev · SYSTEM DESIGN</span>
+            </div>
+            <h1>Cap. 2: <span class="accent">Promedio vs p99</span> (Tail Latency)</h1>
+            <p class="subtitle">Requisitos no funcionales · Referencia: <em>Designing Data-Intensive Applications</em> (Martin Kleppmann y Chris Riccomini)</p>
+          </div>
+        </div>
+        <div class="header-actions no-print">
+          <button class="btn btn-primary" onclick="window.print()">Imprimir / Guardar PDF</button>
+          <a class="btn" href="https://github.com/JulioWhile/tlacuachedev-ddia">Índice 13 días</a>
+        </div>
+      </header>
+
+      <!-- CORE CALLOUT -->
+      <section class="callout">
+        <div class="sec-kicker">La idea central en 10 segundos</div>
+        <p>
+          Un promedio de <strong>20 ms</strong> en tu dashboard no te dice cuántos usuarios sufren esperas de <strong>4 segundos</strong>. En producción, el 1% más lento (<strong>p99</strong>) suele ser tu <strong>cliente VIP</strong> con más historial y más pedidos.
+        </p>
+        <p class="rule-line">
+          <strong>Regla del Cap. 2:</strong> define tus SLAs y alertas sobre <strong>p95 y p99</strong>, nunca sobre la media aritmética. En arquitecturas con <em>fan-out</em> paralelo, una sola dependencia lenta bloquea toda la pantalla.
+        </p>
+      </section>
+
+      <!-- GLOSSARY (8 TERMS) -->
+      <section class="card">
+        <div class="sec-kicker">Glosario rápido · 8 términos clave del Cap. 2</div>
+        <div class="glossary-grid">
+          <div class="gloss-item"><strong>Latencia:</strong> tiempo que una petición espera antes de procesarse + responder (tiempo total percibido por el cliente).</div>
+          <div class="gloss-item"><strong>Percentil:</strong> valor bajo el cual cae cierto porcentaje de peticiones ordenadas de más rápida a más lenta.</div>
+          <div class="gloss-item"><strong>p50 / Mediana:</strong> el punto medio real: la mitad de tus usuarios tardan menos que p50 y la otra mitad más.</div>
+          <div class="gloss-item"><strong>p95 / p99:</strong> el umbral que cubre al 95% o 99% de peticiones; p99 expone el dolor del 1% más lento.</div>
+          <div class="gloss-item"><strong>Tail Latency:</strong> los percentiles altos (p95, p99, p99.9) en la "cola larga" de la distribución de respuestas.</div>
+          <div class="gloss-item"><strong>Tail Latency Amplification:</strong> cuando una pantalla depende de N llamadas paralelas y la probabilidad de tocar p99 se multiplica.</div>
+          <div class="gloss-item"><strong>Fan-Out:</strong> una sola petición del usuario que dispara múltiples llamadas simultáneas a distintos servicios backend.</div>
+          <div class="gloss-item"><strong>SLA / SLO:</strong> objetivo interno de rendimiento (SLO) o contrato externo con clientes (SLA), p. ej. <em>p99 &lt; 500 ms</em>.</div>
+        </div>
+      </section>
+
+      <!-- COMPARISON TABLE -->
+      <section class="card">
+        <div class="sec-kicker">01 · Promedio vs Percentiles en producción</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20%">Métrica</th>
+              <th style="width:28%">Qué mide realmente</th>
+              <th style="width:26%">Qué oculta / riesgo</th>
+              <th style="width:26%">Cuándo usarla</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Promedio (AVG)</strong></td>
+              <td>Suma de todos los tiempos dividida entre N peticiones.</td>
+              <td><span class="tag-err">Esconde picos extremos:</span> 99 rápidas + 1 de 4 s ≈ 59 ms.</td>
+              <td>Solo reportes de capacidad/costos, <strong>nunca</strong> para UX ni alertas.</td>
+            </tr>
+            <tr>
+              <td><strong>p50 (Mediana)</strong></td>
+              <td>Experiencia del usuario típico (50% más rápido, 50% más lento).</td>
+              <td>No refleja qué tan grave es la cola larga del 1%–5%.</td>
+              <td>Referencia base del comportamiento normal de un endpoint.</td>
+            </tr>
+            <tr>
+              <td><strong>p95 / p99</strong></td>
+              <td>Límite real del 5% y 1% más lento (donde caen clientes VIP).</td>
+              <td>Requiere histogramas (HDR / Prometheus) para agregarse bien.</td>
+              <td><span class="tag-ok">SLOs, SLAs y alertas</span> en producción y gateways.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- DIAGRAM 1: LONG-TAIL DISTRIBUTION -->
+      <section class="card">
+        <div class="sec-kicker">02 · Modelo mental: Curva de Cola Larga (100 peticiones)</div>
+        <div class="svg-stage">
+          <svg viewBox="0 0 820 195" xmlns="http://www.w3.org/2000/svg">
+            <rect width="820" height="195" fill="#faf8f4" />
+            <line x1="36" y1="158" x2="790" y2="158" stroke="#18181b" stroke-width="2.5" />
+            <!-- Area & Curve -->
+            <path d="M 42,156 C 72,152 102,28 148,28 C 202,28 242,126 355,142 C 505,152 645,154 776,156 L 776,158 L 42,158 Z" fill="rgba(37,99,235,0.12)" />
+            <path d="M 42,156 C 72,152 102,28 148,28 C 202,28 242,126 355,142 C 505,152 645,154 776,156" fill="none" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round" />
+            <!-- Red Long Tail -->
+            <path d="M 615,153 C 675,154 725,155 776,156 L 776,158 L 615,158 Z" fill="rgba(220,38,38,0.42)" />
+            <!-- Markers -->
+            <line x1="152" y1="22" x2="152" y2="158" stroke="#15803d" stroke-width="2.2" stroke-dasharray="5 4" />
+            <rect x="98" y="8" width="108" height="22" rx="6" fill="#15803d" />
+            <text x="152" y="23" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="800" fill="#ffffff">p50: 18 ms</text>
+
+            <line x1="215" y1="48" x2="215" y2="158" stroke="#52525b" stroke-width="2" stroke-dasharray="4 4" />
+            <rect x="166" y="42" width="112" height="22" rx="6" fill="#18181b" />
+            <text x="222" y="57" text-anchor="middle" font-family="JetBrains Mono" font-size="10.5" font-weight="800" fill="#f4f1ea">AVG: 20 ms</text>
+
+            <line x1="365" y1="62" x2="365" y2="158" stroke="#2563eb" stroke-width="2.2" stroke-dasharray="5 4" />
+            <rect x="311" y="46" width="108" height="22" rx="6" fill="#2563eb" />
+            <text x="365" y="61" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="800" fill="#ffffff">p95: 90 ms</text>
+
+            <line x1="720" y1="46" x2="720" y2="158" stroke="#dc2626" stroke-width="3" />
+            <rect x="646" y="20" width="144" height="26" rx="7" fill="#dc2626" />
+            <text x="718" y="37" text-anchor="middle" font-family="JetBrains Mono" font-size="11.5" font-weight="800" fill="#ffffff">p99: 4,000 ms</text>
+            <text x="718" y="64" text-anchor="middle" font-family="Space Grotesk" font-size="11.5" font-weight="700" fill="#b91c1c">Cliente VIP (420 pedidos)</text>
+
+            <text x="42" y="178" font-family="JetBrains Mono" font-size="10.5" font-weight="700" fill="#52525b">0 ms</text>
+            <text x="365" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10.5" font-weight="700" fill="#52525b">Latencia de respuesta →</text>
+            <text x="782" y="178" text-anchor="end" font-family="JetBrains Mono" font-size="10.5" font-weight="700" fill="#b91c1c">4,000 ms</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- PAGE 2: DIAGRAM 2 (TAIL LATENCY AMPLIFICATION + TOGGLE) -->
+      <section class="card page-break-before print-both">
+        <div class="card-header-row">
+          <div>
+            <div class="sec-kicker">03 · Caso real de producción: Tail Latency Amplification (5 servicios)</div>
+            <h2>1 pantalla con Fan-Out paralelo: sin vs con protección</h2>
+          </div>
+          <div class="seg-toggle no-print" role="tablist">
+            <button class="seg-btn active-err" id="btn-raw" onclick="setMode('raw')">Sin protección (4.0 s)</button>
+            <button class="seg-btn" id="btn-hedged" onclick="setMode('hedged')">Con Hedged + Alertas p99</button>
+          </div>
+        </div>
+
+        <div class="svg-stage">
+          <!-- Mode 1: Raw Tail Amplification -->
+          <div class="diag-panel visible" id="diag-raw">
+            <svg viewBox="0 0 820 185" xmlns="http://www.w3.org/2000/svg">
+              <rect width="820" height="185" fill="#faf8f4" />
+              <text x="16" y="20" font-family="JetBrains Mono" font-size="11" font-weight="800" fill="#b91c1c">SIN PROTECCIÓN · 1 SERVICIO LENTO BLOQUEA TODA LA PANTALLA</text>
+              <!-- 5 Lanes -->
+              <g font-family="JetBrains Mono" font-size="11" font-weight="700">
+                <text x="16" y="48" fill="#18181b">Auth</text>
+                <rect x="105" y="34" width="95" height="20" rx="5" fill="#15803d" />
+                <text x="114" y="48" fill="#ffffff">12 ms ✓</text>
+
+                <text x="16" y="76" fill="#18181b">Cart</text>
+                <rect x="105" y="62" width="115" height="20" rx="5" fill="#15803d" />
+                <text x="114" y="76" fill="#ffffff">18 ms ✓</text>
+
+                <text x="16" y="104" fill="#18181b">Recs</text>
+                <rect x="105" y="90" width="130" height="20" rx="5" fill="#15803d" />
+                <text x="114" y="104" fill="#ffffff">22 ms ✓</text>
+
+                <text x="16" y="132" fill="#b91c1c">Promo</text>
+                <rect x="105" y="118" width="665" height="22" rx="5" fill="#dc2626" />
+                <text x="116" y="133" fill="#ffffff">4,000 ms (GC pause / full scan) — BLOQUEA RENDER ✕</text>
+
+                <text x="16" y="160" fill="#18181b">Inventory</text>
+                <rect x="105" y="146" width="105" height="20" rx="5" fill="#15803d" />
+                <text x="114" y="160" fill="#ffffff">15 ms ✓</text>
+              </g>
+              <line x1="770" y1="30" x2="770" y2="174" stroke="#dc2626" stroke-width="3" stroke-dasharray="5 4" />
+            </svg>
+          </div>
+
+          <!-- Mode 2: Protected with Hedged Requests + Timeout + p99 Alerts -->
+          <div class="diag-panel" id="diag-hedged">
+            <svg viewBox="0 0 820 160" xmlns="http://www.w3.org/2000/svg">
+              <rect width="820" height="160" fill="#faf8f4" />
+              <text x="16" y="20" font-family="JetBrains Mono" font-size="11" font-weight="800" fill="#2563eb">CON HEDGED REQUESTS + TIMEOUT + ALERTAS p99 · PANTALLA PROTEGIDA</text>
+              <g font-family="JetBrains Mono" font-size="11" font-weight="700">
+                <text x="16" y="48" fill="#18181b">Auth / Cart</text>
+                <rect x="125" y="34" width="105" height="20" rx="5" fill="#15803d" />
+                <text x="134" y="48" fill="#ffffff">18 ms ✓</text>
+
+                <text x="16" y="78" fill="#52525b">Promo #1</text>
+                <rect x="125" y="64" width="185" height="20" rx="5" fill="#e4e4e7" stroke="#a1a1aa" />
+                <text x="134" y="78" fill="#52525b">lento → cancelado</text>
+
+                <text x="16" y="108" fill="#2563eb">Promo #2</text>
+                <rect x="210" y="94" width="120" height="22" rx="5" fill="#2563eb" />
+                <text x="219" y="109" fill="#ffffff">Hedged 85 ms ✓</text>
+
+                <text x="16" y="138" fill="#15803d">Render OK</text>
+                <rect x="125" y="124" width="205" height="20" rx="5" fill="#15803d" />
+                <text x="134" y="138" fill="#ffffff">Total pantalla: 105 ms ✓</text>
+              </g>
+              <line x1="330" y1="30" x2="330" y2="150" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="5 4" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="takeaway-grid">
+          <div class="mini-note err-note">
+            <strong>Matemática del Fan-Out</strong>
+            Si cada servicio tiene 1% de probabilidad de ser lento (p99), con 5 llamadas paralelas la probabilidad de pantalla lenta sube a <b>1 − 0.99⁵ ≈ 4.9%</b>.
+          </div>
+          <div class="mini-note">
+            <strong>Hedged Requests (solo lecturas idempotentes)</strong>
+            Si la copia #1 no responde antes de p95, se lanza una copia #2 a otra réplica y se usa la primera que llegue.
+          </div>
+        </div>
+      </section>
+
+      <!-- PRACTICAL ALERT RULE -->
+      <section class="card">
+        <div class="sec-kicker">04 · Regla práctica de producción (Prometheus / SLO)</div>
+        <div class="code-wrap">
+          <button class="copy-btn no-print" id="copy-btn" onclick="copyRule()">Copiar</button>
+<pre id="rule-code">alert: HighTailLatencyVIP
+expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) &gt; 0.5
+for: 3m
+annotations:
+  summary: "p99 arriba de 500ms (clientes VIP afectados aunque AVG siga en 20ms)"</pre>
+        </div>
+      </section>
+
+      <!-- 3 INTERVIEW QUESTIONS -->
+      <section class="card">
+        <div class="sec-kicker">05 · 3 preguntas reales de entrevista (System Design)</div>
+        <div class="qa-list">
+          <div class="qa-item">
+            <div class="qa-q"><span class="num">Q1</span>¿Por qué no basta medir el tiempo promedio (AVG) de una API?</div>
+            <div class="qa-a">Porque la latencia no sigue una campana simétrica: tiene cola larga. Un 1% de peticiones de 4 segundos apenas mueve el promedio, pero arruina la experiencia justo de tus clientes más valiosos (más historial, más datos).</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-q"><span class="num">Q2</span>¿Qué es <em>Tail Latency Amplification</em> en microservicios?</div>
+            <div class="qa-a">Cuando una pantalla hace <em>fan-out</em> a N servicios en paralelo, el usuario espera al servicio más lento. Aunque cada servicio cumpla 99%, al multiplicar llamadas el porcentaje de pantallas lentas crece rápido.</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-q"><span class="num">Q3</span>¿Se pueden promediar los p99 de varios servidores para sacar el p99 global?</div>
+            <div class="qa-a"><strong>No.</strong> Los percentiles no son promediables. Debes agregar <strong>histogramas</strong> (buckets de latencia o HDR Histograms) y calcular el p99 sobre la distribución combinada.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="doc-footer">
+        <span>@tlacuachedev · Serie 13 días <em>Designing Data-Intensive Applications</em></span>
+        <span>Siguiente: <a href="https://github.com/JulioWhile/tlacuachedev-ddia">Día 3/13 · SQL vs NoSQL (Modelos de Datos)</a></span>
+      </footer>
+    </main>
+
+    <script>
+      function setMode(mode) {
+        const raw = document.getElementById("diag-raw");
+        const hedged = document.getElementById("diag-hedged");
+        const bRaw = document.getElementById("btn-raw");
+        const bHedged = document.getElementById("btn-hedged");
+        if (mode === "raw") {
+          raw.classList.add("visible"); hedged.classList.remove("visible");
+          bRaw.className = "seg-btn active-err"; bHedged.className = "seg-btn";
+        } else {
+          hedged.classList.add("visible"); raw.classList.remove("visible");
+          bHedged.className = "seg-btn active-ok"; bRaw.className = "seg-btn";
+        }
+      }
+      function copyRule() {
+        const txt = document.getElementById("rule-code").textContent;
+        navigator.clipboard.writeText(txt).then(() => {
+          const btn = document.getElementById("copy-btn");
+          btn.textContent = "Copiado ✓"; btn.classList.add("copied");
+          setTimeout(() => { btn.textContent = "Copiar"; btn.classList.remove("copied"); }, 1800);
+        });
+      }
+    </script>
+  </body>
+</html>

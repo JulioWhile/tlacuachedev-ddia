@@ -13,7 +13,7 @@ Cada capítulo está pensado para repasar en menos de 3 minutos antes de una ent
 | Día | Parte | Capítulo | Tema principal | HTML Interactivo | Markdown | PDF | Estado |
 | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: |
 | **01** | I | Cap. 1: Trade-offs de arquitectura | Monolito vs microservicios, fallos parciales y criterios para distribuir | [Abrir Web Interactiva](https://juliowhile.github.io/tlacuachedev-ddia/cap01-monolito-vs-microservicios.html) | [Ver MD](./cap01-monolito-vs-microservicios.md) | [Descargar PDF](./cap01-monolito-vs-microservicios.pdf) | Disponible |
-| **02** | I | Cap. 2: Requisitos no funcionales | Promedio vs p99 (tail latency), confiabilidad y escalabilidad | Próximamente | Próximamente | Próximamente | En cola |
+| **02** | I | Cap. 2: Requisitos no funcionales | Promedio vs p99 (tail latency), VIPs y Tail Latency Amplification | [Abrir Web Interactiva](https://juliowhile.github.io/tlacuachedev-ddia/cap02-promedio-vs-p99.html) | [Ver MD](./cap02-promedio-vs-p99.md) | [Descargar PDF](./cap02-promedio-vs-p99.pdf) | Disponible |
 | **03** | I | Cap. 3: Modelos de datos y consultas | SQL vs NoSQL (documentos y grafos), cuándo elegir cada uno | Próximamente | Próximamente | Próximamente | En cola |
 | **04** | I | Cap. 4: Almacenamiento y recuperación | Índices, B-Trees vs LSM-Trees y almacenamiento columnar | Próximamente | Próximamente | Próximamente | En cola |
 | **05** | I | Cap. 5: Codificación y evolución | JSON vs Protobuf/Avro y compatibilidad en despliegues | Próximamente | Próximamente | Próximamente | En cola |
@@ -28,8 +28,9 @@ Cada capítulo está pensado para repasar en menos de 3 minutos antes de una ent
 
 ## Versión web interactiva (GitHub Pages)
 
-Puedes abrir el cheatsheet del Capítulo 1 directamente en tu navegador (con toggle interactivo *Sin* vs *Con Idempotency-Key*, glosario y botón para imprimir PDF):
+Puedes abrir los cheatsheets directamente en tu navegador (con diagramas interactivos, glosario y botón para imprimir PDF):
 - **[Cap. 1 · Monolito vs Microservicios (Web Interactiva)](https://juliowhile.github.io/tlacuachedev-ddia/cap01-monolito-vs-microservicios.html)**
+- **[Cap. 2 · Promedio vs p99 / Tail Latency (Web Interactiva)](https://juliowhile.github.io/tlacuachedev-ddia/cap02-promedio-vs-p99.html)**
 
 ## Cómo usar estos cheatsheets para entrevistas
 
