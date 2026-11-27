@@ -773,14 +773,25 @@
         }
 
         .cmp-list { gap: 3px; }
-        .cmp-row { border-radius: 6px; break-inside: avoid; }
-        .cmp-dim { padding: 2px 8px; font-size: 8.2px; }
+        .cmp-row {
+          display: grid;
+          grid-template-columns: 132px minmax(0, 1fr);
+          border-radius: 6px;
+          break-inside: avoid;
+        }
+        .cmp-dim {
+          padding: 4px 7px;
+          font-size: 8px;
+          border-bottom: none;
+          border-right: 1px solid var(--border);
+          align-items: flex-start;
+        }
         .cmp-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
-        .cmp-cell { display: flex !important; padding: 3.5px 8px; gap: 1px; }
+        .cmp-cell { display: flex !important; padding: 3.5px 7px; gap: 1px; }
         .cmp-cell + .cmp-cell { border-left: 1px solid var(--border) !important; border-top: none !important; }
-        .cmp-arch { font-size: 7.8px; }
-        .cmp-badge { font-size: 8px; padding: 0.5px 5px; }
-        .cmp-text { font-size: 9px; line-height: 1.2; }
+        .cmp-arch { font-size: 7.5px; }
+        .cmp-badge { font-size: 7.8px; padding: 0.5px 4px; }
+        .cmp-text { font-size: 8.8px; line-height: 1.2; }
 
         .svg-stage {
           padding: 6px;
